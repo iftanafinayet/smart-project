@@ -35,6 +35,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'jwt'           => \App\Filters\JwtFilter::class,
+        'role'          => \App\Filters\RoleFilter::class,
     ];
 
     /**

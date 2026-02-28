@@ -3,79 +3,70 @@
 namespace App\Services;
 
 use App\Models\UserModel;
-use App\Models\RefreshTokenModel;
+use Firebase\JWT\JWT;
+use Exception;
 
 class AuthService
 {
-    private $userModel;
-    private $refreshModel;
-    private $tokenService;
+    protected $userModel;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
-        $this->refreshModel = new RefreshTokenModel();
-        $this->tokenService = new TokenService();
     }
 
-    public function register($name, $email, $password)
+    /**
+     * Logika Login
+     */
+    public function login($username, $password)
     {
-        return $this->userModel->save([
-            'name' => $name,
-            'email' => $email,
-            'password' => password_hash($password, PASSWORD_BCRYPT),
-            'role' => 'user'
-        ]);
-    }
+        // 1. Cari user berdasarkan username dan join ke roles untuk dapet nama role-nya
+        $user = $this->userModel->select('users.*, roles.role_name')
+            ->join('roles', 'roles.id = users.role_id', 'left')
+            ->where('username', $username)
+            ->first();
 
-    public function login($email, $password)
-    {
-        $user = $this->userModel->where('email', $email)->first();
-
-        if (!$user || !password_verify($password, $user['password'])) {
-            return false;
+        // 2. Cek apakah user ada dan password cocok
+        if ($user && password_verify($password, $user['password'])) {
+            return $this->generateToken($user);
         }
 
-        $access = $this->tokenService->generateAccessToken($user);
-        $refresh = $this->tokenService->generateRefreshToken($user);
+        return false;
+    }
 
-        $this->refreshModel->save([
-            'user_id' => $user['id'],
-            'token' => $refresh,
-            'expires_at' => date('Y-m-d H:i:s', time() + 604800),
-            'revoked' => false
-        ]);
+    /**
+     * Generate JWT Token
+     */
+    private function generateToken($user)
+    {
+        $key = getenv('JWT_SECRET') ?: 'default_secret_key'; // Ambil dari .env
+        $iat = time();
+        $exp = $iat + (60 * 60 * 24); // Token berlaku 24 jam
 
-        return [
-            'access_token' => $access,
-            'refresh_token' => $refresh
+        $payload = [
+            'iss'  => 'smart-project-pos', // Issuer
+            'aud'  => 'smart-project-pos', // Audience
+            'iat'  => $iat,                // Issued At
+            'nbf'  => $iat,                // Not Before
+            'exp'  => $exp,                // Expiration Time
+            'uid'  => $user['id'],         // User ID
+            'user' => $user['username'],   // Username
+            'role' => $user['role_name'],   // Role Name (admin/kasir)
         ];
+
+        return JWT::encode($payload, $key, 'HS256');
     }
 
-    public function refresh($refreshToken)
+    /**
+     * Logic Refresh Token (Optional)
+     */
+    public function validateToken($token)
     {
-        $stored = $this->refreshModel->findValidToken($refreshToken);
-
-        if (!$stored) {
+        try {
+            $key = getenv('JWT_SECRET');
+            return JWT::decode($token, new \Firebase\JWT\Key($key, 'HS256'));
+        } catch (Exception $e) {
             return false;
-        }
-
-        $decoded = $this->tokenService->verifyRefresh($refreshToken);
-        $user = $this->userModel->find($decoded->data->id);
-
-        return $this->tokenService->generateAccessToken($user);
-    }
-
-    public function logout($refreshToken)
-    {
-        $token = $this->refreshModel
-                      ->where('token', $refreshToken)
-                      ->first();
-
-        if ($token) {
-            $this->refreshModel->update($token['id'], [
-                'revoked' => true
-            ]);
         }
     }
 }

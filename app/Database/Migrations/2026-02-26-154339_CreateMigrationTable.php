@@ -4,10 +4,14 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class CreateMigrationTable extends Migration
+class CreateEnterpriseTables extends Migration
 {
-        public function up()
+    public function up()
     {
+        // ==========================================
+        // Tabel yang sudah ada (Struktur kamu)
+        // ==========================================
+
         // 1. Roles
         $this->forge->addField([
             'id'             => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
@@ -105,7 +109,7 @@ class CreateMigrationTable extends Migration
             'id'             => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
             'invoice_number' => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true],
             'customer_id'    => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'null' => true],
-            'user_id'        => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'null' => true],
+            'user_id'        => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'null' => true], // Karyawan yang input
             'sale_date'      => ['type' => 'DATE'],
             'total_gross'    => ['type' => 'DECIMAL', 'constraint' => '15,2'],
             'discount_total' => ['type' => 'DECIMAL', 'constraint' => '15,2', 'default' => 0.00],
@@ -143,6 +147,44 @@ class CreateMigrationTable extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addForeignKey('product_id', 'products', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('stock_logs');
+
+        // ==========================================
+        // TAMBAHAN: Tabel Baru untuk Integrasi
+        // ==========================================
+
+        // 12. Departments (HR)
+        $this->forge->addField([
+            'id'             => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
+            'dept_name'      => ['type' => 'VARCHAR', 'constraint' => 100],
+        ]);
+        $this->forge->addKey('id', true);
+        $this->forge->createTable('departments');
+
+        // 13. Employees (HR) - Menghubungkan user ke HR
+        $this->forge->addField([
+            'id'             => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
+            'user_id'        => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'null' => true], // Link ke login user
+            'dept_id'        => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'null' => true],
+            'nik'            => ['type' => 'VARCHAR', 'constraint' => 50, 'unique' => true],
+            'position'       => ['type' => 'VARCHAR', 'constraint' => 100],
+            'join_date'      => ['type' => 'DATE'],
+        ]);
+        $this->forge->addKey('id', true);
+        $this->forge->addForeignKey('user_id', 'users', 'id', 'SET NULL', 'CASCADE');
+        $this->forge->addForeignKey('dept_id', 'departments', 'id', 'SET NULL', 'CASCADE');
+        $this->forge->createTable('employees');
+
+        // 14. Finance Transactions (Finance) - Integrasi Sales & Purchase
+        $this->forge->addField([
+            'id'             => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
+            'type'           => ['type' => 'ENUM', 'constraint' => ['Income', 'Expense']],
+            'amount'         => ['type' => 'DECIMAL', 'constraint' => '15,2'],
+            'description'    => ['type' => 'TEXT'],
+            'transaction_date'=> ['type' => 'DATETIME'],
+            'reference_no'   => ['type' => 'VARCHAR', 'constraint' => 50, 'null' => true], // Invoice no atau PO no
+        ]);
+        $this->forge->addKey('id', true);
+        $this->forge->createTable('finance_transactions');
     }
 
     public function down()
@@ -150,6 +192,12 @@ class CreateMigrationTable extends Migration
         // Matikan foreign key check supaya bisa drop tanpa error
         $this->db->disableForeignKeyChecks();
 
+        // Drop Tabel Baru
+        $this->forge->dropTable('finance_transactions', true);
+        $this->forge->dropTable('employees', true);
+        $this->forge->dropTable('departments', true);
+
+        // Drop Tabel Awal
         $this->forge->dropTable('stock_logs', true);
         $this->forge->dropTable('sale_items', true);
         $this->forge->dropTable('sales', true);
@@ -165,4 +213,3 @@ class CreateMigrationTable extends Migration
         $this->db->enableForeignKeyChecks();
     }
 }
-

@@ -5,21 +5,33 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
-$routes->group('api', ['namespace' => 'App\Controllers\API'], function($routes) {
 
+$routes->group('api/v1', ['namespace' => 'App\Controllers\API'], function($routes) {
+
+    // 🔓 PUBLIC
     $routes->post('login', 'AuthController::login');
+    $routes->post('refresh', 'AuthController::refresh');
 
+    // 🔐 PROTECTED (JWT Required)
     $routes->group('', ['filter' => 'jwt'], function($routes) {
 
-        // Products
-        $routes->get('products', 'ProductController::index');
-        $routes->post('products', 'ProductController::create');
-        $routes->get('products/(:num)', 'ProductController::show/$1');
-        $routes->put('products/(:num)', 'ProductController::update/$1');
-        $routes->delete('products/(:num)', 'ProductController::delete/$1');
+        // 👤 Profile
+        $routes->get('me', 'UserController::me');
 
-        // Sales
-        $routes->get('sales', 'SalesController::index');
-        $routes->post('sales', 'SalesController::create');
+        // 📦 Products (Accessible by all authenticated users)
+        $routes->get('products', 'ProductController::index');
+        $routes->get('products/(:num)', 'ProductController::show/$1');
+
+        // 🔒 Admin Only - Product Mutations
+        // Gunakan array untuk multiple filters jika diperlukan, 
+        // tapi karena sudah di dalam group 'jwt', kita cukup tambahkan 'role'
+        $routes->post('products', 'ProductController::create', ['filter' => 'role:admin']);
+        $routes->put('products/(:num)', 'ProductController::update/$1', ['filter' => 'role:admin']);
+        $routes->delete('products/(:num)', 'ProductController::delete/$1', ['filter' => 'role:admin']);
+
+        // 💰 Sales
+        // Pastikan nama Controller sesuai (Sales vs Sale)
+        $routes->get('sales', 'SaleController::index', ['filter' => 'role:admin']);
+        $routes->post('sales', 'SaleController::create'); 
     });
 });
