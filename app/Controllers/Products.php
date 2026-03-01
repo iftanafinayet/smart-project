@@ -6,7 +6,6 @@ class Products extends BaseController
 {
     public function index()
     {
-        // Tampilkan view products
-        return view('products_view');
+        return view('employees/index');
     }
 }

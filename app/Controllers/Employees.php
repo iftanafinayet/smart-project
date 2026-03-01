@@ -6,6 +6,6 @@ class Employees extends BaseController
 {
     public function index()
     {
-        return view('employees_view');
+        return view('employees/index');
     }
 }

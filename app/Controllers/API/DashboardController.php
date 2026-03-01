@@ -13,6 +13,9 @@ class DashboardController extends BaseController
 {
     use ResponseTrait;
 
+    /**
+     * Endpoint API untuk menyuplai data ke Dashboard
+     */
     public function index()
     {
         try {
@@ -25,20 +28,20 @@ class DashboardController extends BaseController
             $request = $this->request;
             $userData = property_exists($request, 'user') ? $request->user : null;
             
-            // Fallback role_id jika role name tidak tersedia
+            // Identifikasi Role untuk hak akses data
             $roleId = $userData->role_id ?? null;
             $role = strtolower($userData->role ?? ($roleId == 1 ? 'admin' : 'staff'));
 
-            // 1. Ambil Produk Stok Rendah (< 10)
-            // Kunci diubah menjadi 'low_stock_products' agar sesuai dengan JS di Frontend
+            // 1. Data Umum: Produk Stok Rendah (< 10)
+            // Sinkron dengan renderDashboard() di Frontend
             $lowStockProducts = $productModel->where('current_stock <', 10)->findAll();
 
             $data = [
                 'role' => $role,
-                'low_stock_products' => $lowStockProducts // Sesuai baris 153 di dashboard_view.php
+                'low_stock_products' => $lowStockProducts
             ];
 
-            // 2. Logika Khusus Admin
+            // 2. Logika Khusus Admin: Statistik Finansial dan SDM
             if ($role === 'admin' || $roleId == 1) {
                 // Penjualan Hari Ini
                 $salesToday = $saleModel->where('DATE(sale_date)', date('Y-m-d'))
@@ -46,9 +49,10 @@ class DashboardController extends BaseController
                                         ->get()->getRow()->total_net;
                 $data['sales_today'] = (float)($salesToday ?? 0);
 
+                // Total SDM Organisasi
                 $data['total_employees'] = $userModel->countAllResults();
 
-                // Data Grafik 7 Hari Terakhir
+                // Data Grafik Penjualan 7 Hari Terakhir
                 $chartLabels = [];
                 $chartValues = [];
                 for ($i = 6; $i >= 0; $i--) {
@@ -65,13 +69,14 @@ class DashboardController extends BaseController
                 ];
             }
 
-            // 3. Logika Khusus Gudang/Admin
+            // 3. Logika Khusus Gudang/Admin: Inventaris
             if (in_array($role, ['gudang', 'admin']) || in_array($roleId, [1, 3])) {
                 $data['pending_po'] = $poModel->where('status', 'Pending')->countAllResults();
                 $totalInv = $productModel->selectSum('current_stock')->get()->getRow()->current_stock;
                 $data['total_inventory'] = (int)($totalInv ?? 0);
             }
 
+            // Mengembalikan respon JSON ke Frontend
             return $this->respond([
                 'status' => 200,
                 'message' => 'Success',

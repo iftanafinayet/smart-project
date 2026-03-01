@@ -8,6 +8,6 @@ class Reports extends BaseController
 {
     public function index()
     {
-        return view('reports_view');
+        return view('reports/index');
     }
 }

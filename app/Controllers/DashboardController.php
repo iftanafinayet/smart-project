@@ -9,6 +9,6 @@ class DashboardController extends BaseController
     public function index()
     {
         // Tampilkan view saja
-        return view('dashboard_view');
+        return view('dashboard/index');
     }
 }

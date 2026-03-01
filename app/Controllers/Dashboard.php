@@ -14,6 +14,6 @@ class Dashboard extends BaseController
         }
 
         // 2. Tampilkan view dashboard
-        return view('dashboard_view');
+        return view('dashboard/index');
     }
 }
