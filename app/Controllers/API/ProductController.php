@@ -3,88 +3,49 @@
 namespace App\Controllers\API;
 
 use App\Controllers\BaseController;
-use App\Services\ProductService;
+use CodeIgniter\API\ResponseTrait;
+use App\Models\ProductModel;
 
 class ProductController extends BaseController
 {
-    protected $service;
-
-    public function __construct()
-    {
-        $this->service = new ProductService();
-    }
+    use ResponseTrait;
 
     public function index()
     {
-        return $this->respond($this->service->getAllProducts());
-    }
-
-    public function show($id = null)
-    {
-        $data = $this->service->getProductById($id);
-        if (!$data) return $this->failNotFound('Product not found');
-        return $this->respond($data);
+        $model = new ProductModel();
+        return $this->respond(['data' => $model->findAll()]);
     }
 
     public function create()
     {
-        // 1. Rules Validasi (Termasuk Image)
-        $rules = [
-            'product_name' => 'required|min_length[3]|is_unique[products.product_name]',
-            'category_id'  => 'required|is_not_unique[categories.id]',
-            'price'        => 'required|numeric',
-            'stock'        => 'required|integer',
-            'image'        => 'uploaded[image]|max_size[image,2048]|is_image[image]|mime_in[image,image/jpg,image/jpeg,image/png]',
-        ];
+        $model = new ProductModel();
+        $data = $this->request->getJSON(true);
 
-        if (!$this->validate($rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        // Validasi bisa ditambahkan di sini
+
+        if ($model->insert($data)) {
+            return $this->respondCreated(['message' => 'Produk berhasil ditambahkan']);
         }
-
-        // 2. Handle Upload Gambar
-        $img = $this->request->getFile('image');
-        $newName = $img->getRandomName();
-        $img->move(ROOTPATH . 'public/uploads', $newName);
-
-        // 3. Ambil data dari form-data (bukan getJSON karena ada file)
-        $data = [
-            'product_name' => $this->request->getPost('product_name'),
-            'category_id'  => $this->request->getPost('category_id'),
-            'price'        => $this->request->getPost('price'),
-            'stock'        => $this->request->getPost('stock'),
-            'description'  => $this->request->getPost('description'),
-            'image'        => $newName
-        ];
-
-        $this->service->createProduct($data);
-        return $this->respondCreated(['message' => 'Product created with image', 'data' => $data]);
+        return $this->fail('Gagal menambahkan produk');
     }
 
     public function update($id = null)
     {
-        if (!$this->service->getProductById($id)) return $this->failNotFound('Product not found');
-
-        // Validasi Update
-        $rules = [
-            'product_name' => "min_length[3]|is_unique[products.product_name,id,$id]",
-            'price'        => 'numeric',
-            'image'        => 'permit_empty|max_size[image,2048]|is_image[image]'
-        ];
-
-        if (!$this->validate($rules)) return $this->failValidationErrors($this->validator->getErrors());
-
-        // Ambil data input
-        $data = $this->request->getRawInput(); // Untuk method PUT
+        $model = new ProductModel();
+        $data = $this->request->getJSON(true);
         
-        $this->service->updateProduct($id, $data);
-        return $this->respond(['message' => 'Product updated']);
+        if ($model->update($id, $data)) {
+            return $this->respond(['message' => 'Produk berhasil diupdate']);
+        }
+        return $this->failNotFound('Produk tidak ditemukan');
     }
 
     public function delete($id = null)
     {
-        if (!$this->service->getProductById($id)) return $this->failNotFound('Product not found');
-        
-        $this->service->deleteProduct($id);
-        return $this->respondDeleted(['message' => 'Product deleted successfully']);
+        $model = new ProductModel();
+        if ($model->delete($id)) {
+            return $this->respondDeleted(['message' => 'Produk berhasil dihapus']);
+        }
+        return $this->failNotFound('Produk tidak ditemukan');
     }
 }

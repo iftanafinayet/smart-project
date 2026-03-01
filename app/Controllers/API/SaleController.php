@@ -3,22 +3,30 @@
 namespace App\Controllers\API;
 
 use App\Controllers\BaseController;
-use App\Services\SaleService;
+use CodeIgniter\API\ResponseTrait;
+use App\Models\SaleModel;
 
 class SaleController extends BaseController
 {
-    protected $service;
+    use ResponseTrait;
 
-    public function __construct() { $this->service = new SaleService(); }
-
-    public function index() { return $this->respond($this->service->getAllSales()); }
-
-    public function create()
+    public function index()
     {
-        $data = $this->request->getJSON(true);
-        $result = $this->service->processSale($data);
-        if (!$result) return $this->fail('Transaction failed', 400);
+        $start = $this->request->getVar('start');
+        $end = $this->request->getVar('end');
         
-        return $this->respondCreated(['message' => 'Sale successful']);
+        $model = new SaleModel();
+        
+        // Filter berdasarkan kolom 'sale_date' sesuai gambar
+        if ($start && $end) {
+            $sales = $model->where('sale_date >=', $start)
+                           ->where('sale_date <=', $end)
+                           ->findAll();
+        } else {
+            $sales = $model->findAll();
+        }
+
+        // Mengembalikan respon dengan struktur { "data": [...] }
+        return $this->respond(['data' => $sales]);
     }
 }
