@@ -1,69 +1,72 @@
-# CodeIgniter 4 Application Starter
+# Smart POS Enterprise - Warehouse & Retail Core
+> Sistem Point of Sales (POS) berbasis web yang dirancang untuk manajemen inventaris dan transaksi organisasi secara real-time.
 
-## What is CodeIgniter?
+---
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+## 🏗️ 1. Arsitektur 3-Tier (Three-Tier Architecture)
+Aplikasi ini diimplementasikan menggunakan arsitektur tiga lapis untuk memastikan modularitas, keamanan data, dan skalabilitas sistem:
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+1.  **Presentation Tier (Frontend)**: 
+    * **Teknologi**: HTML5, Tailwind CSS, JavaScript (ES6+), Lucide Icons.
+    * **Fungsi**: Antarmuka bagi Kasir, Admin, dan Petugas Gudang untuk berinteraksi dengan sistem secara visual dan responsif.
+2.  **Application Tier (Logic)**: 
+    * **Teknologi**: CodeIgniter 4 (PHP 8.4).
+    * **Fungsi**: Memproses logika bisnis seperti validasi transaksi, pengurangan stok otomatis, dan otentikasi menggunakan JSON Web Token (JWT).
+3.  **Data Tier (Storage)**: 
+    * **Teknologi**: MySQL/MariaDB.
+    * **Fungsi**: Penyimpanan data persisten untuk katalog produk, data karyawan, riwayat penjualan, dan log mutasi stok.
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## 📊 2. Schematic Diagram & Logic Alur
+Sistem ini menggunakan alur kerja terintegrasi untuk menjaga integritas data organisasi:
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+* **Pola MVC**: Pemisahan tegas antara **Routes** (URL), **Controller** (Logika), **Model** (Database), dan **View** (Tampilan).
+* **Inventory Tracking**: Setiap transaksi di Kasir secara otomatis memotong kolom `current_stock` pada tabel `products` dan mencatatnya sebagai tipe 'Out' di tabel `stock_logs`.
+* **Security Layer**: Implementasi filter JWT pada rute API untuk membatasi akses berdasarkan peran (Admin, Kasir, atau Gudang).
 
-## Installation & updates
+## ⚙️ 3. Hubungan Antar Komponen
+Aplikasi ini mensinkronkan data antar modul secara real-time:
+* **Routes**: Menghubungkan endpoint API (seperti `/api/v1/sales`) dengan Controller terkait.
+* **Controller**: Mengelola input, menjalankan transaksi database (`db->transStart`), dan mengembalikan response JSON.
+* **View**: Menampilkan data dari Controller dengan estetika modern, sudut melengkung ekstrem (`rounded-[3rem]`), dan tipografi tebal (`font-black`).
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+## 🎨 4. User Interface (UI) Overview
+Desain antarmuka dirancang dengan gaya *modern playful tech*:
+* **Dashboard Admin**: Menampilkan grafik tren penjualan (Chart.js) dan kartu statistik pendapatan.
+* **Warehouse Panel**: Dilengkapi peringatan stok kritis untuk barang yang stoknya di bawah 5 unit.
+* **Katalog & Karyawan**: Manajemen CRUD (Create, Read, Update, Delete) yang bersih dengan umpan balik visual yang interaktif.
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+## 🚀 5. Instalasi & Konfigurasi
 
-## Setup
+### Prasyarat
+* **PHP 8.4** atau lebih baru.
+* **Composer** (Dependency Manager).
+* **MySQL Server**.
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+### Langkah-langkah
+1.  **Clone Repositori**:
+    ```bash
+    git clone [https://github.com/username/smart-pos.git](https://github.com/username/smart-pos.git)
+    cd smart-pos
+    ```
+2.  **Instal Dependensi**:
+    ```bash
+    composer install
+    ```
+3.  **Konfigurasi Environment**:
+    Salin `.env.example` menjadi `.env` dan sesuaikan pengaturan database:
+    ```env
+    database.default.database = nama_db_anda
+    database.default.username = root
+    database.default.password = 
+    JWT_SECRET = rahasia_pos_anda
+    ```
+4.  **Database Setup**:
+    Pastikan tabel `products`, `sales`, `sale_items`, `users`, dan `stock_logs` sudah sesuai dengan skema SQL.
+5.  **Jalankan Aplikasi**:
+    ```bash
+    php spark serve
+    ```
+    Buka `http://localhost:8080` pada browser Anda.
 
-## Important Change with index.php
-
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
-
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
-
-**Please** read the user guide for a better explanation of how CI4 works!
-
-## Repository Management
-
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
-
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
-
-## Server Requirements
-
-PHP version 8.2 or higher is required, with the following extensions installed:
-
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
-
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
-
-Additionally, make sure that the following extensions are enabled in your PHP:
-
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+---
+*Developed by: Nayet Iftanafi
