@@ -10,16 +10,6 @@ class SaleModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $useSoftDeletes   = false;
-    protected $protectFields    = true;
-    
-    // Sesuaikan allowedFields dengan struktur tabel baru
-protected $allowedFields    = ['invoice_number', 'customer_id', 'user_id', 'sale_date', 'total_gross', 'discount_total', 'total_net', 'payment_status'];
-    
-
-    // Dates
-    protected $useTimestamps = false;
-    protected $dateFormat    = 'datetime';
-    protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
+    protected $allowedFields    = ['invoice_number', 'user_id', 'total_gross', 'total_net', 'sale_date'];
 }
+

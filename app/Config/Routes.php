@@ -1,60 +1,46 @@
 <?php
-
 use CodeIgniter\Router\RouteCollection;
+/** @var RouteCollection $routes */
 
-/**
- * @var RouteCollection $routes
- */
+// --- WEB ROUTES (Sudah Jalan - Tidak Diubah) ---
+$routes->get('/', function() { return redirect()->to('/login'); });
+$routes->get('login', function() { return view('login_view'); });
 
-// ==========================================
-// 🌐 WEB ROUTES (Akses langsung di Browser)
-// ==========================================
+$routes->group('', function($routes) {
+    $routes->get('dashboard', 'DashboardController::index');
+    $routes->get('sales', function() { return view('kasir_view'); }); 
+    $routes->get('products', function() { return view('products_view'); });
+    $routes->get('employees', function() { return view('employees_view'); });
+    $routes->get('reports', function() { return view('reports_view'); });
 
-// Rute untuk menampilkan halaman login
-$routes->get('login', function() {
-    return view('login_view');
+    $routes->group('warehouse', function($routes) {
+        $routes->get('dashboard', function() { return view('warehouse_dashboard'); });
+        $routes->get('inventory', function() { return view('warehouse_products_view'); });
+        $routes->get('stock-logs', function() { return view('warehouse_stock_logs_view'); }); 
+    });
 });
 
-// Rute untuk menampilkan halaman dashboard di browser
-$routes->get('dashboard', 'DashboardController::index');
-
-// Rute untuk menampilkan halaman manajemen (Views)
-$routes->get('products', 'Products::index');
-$routes->get('employees', 'Employees::index');
-$routes->get('reports', 'Reports::index');
-
-// ==========================================
-// 🔌 API ROUTES (Akses melalui Fetch/Postman)
-// ==========================================
+// --- API ROUTES (Perbaikan Fokus di Sini) ---
 $routes->group('api/v1', ['namespace' => 'App\Controllers\API'], function($routes) {
-
-    // 🔓 PUBLIC ROUTES - Accessible without authentication
     $routes->post('login', 'AuthController::login');
-    $routes->post('refresh', 'AuthController::refresh');
 
-    // 🔐 PROTECTED ROUTES - Requires JWT Authentication
-    $routes->group('', ['filter' => 'jwt'], function($routes) {
-
-        // 👤 User Profile
-        $routes->get('me', 'UserController::me');
-
-        // 📦 Product Management
-        $routes->get('products', 'ProductController::index');
-        $routes->get('products/(:num)', 'ProductController::show/$1');
-
-        // 🔒 Admin Only - Product Mutations
-        $routes->post('products', 'ProductController::create', ['filter' => 'role:admin']);
-        $routes->put('products/(:num)', 'ProductController::update/$1', ['filter' => 'role:admin']);
-        $routes->delete('products/(:num)', 'ProductController::delete/$1', ['filter' => 'role:admin']);
+    $routes->group('', ['filter' => ['jwt']], function($routes) {
         
-        // 📊 Dashboard API (Admin Only)
-        $routes->get('dashboard', 'DashboardController::index', ['filter' => 'role:admin']);
+        // Tetap pertahankan yang sudah jalan
+        $routes->get('products', 'ProductController::index', ['filter' => 'role:admin,kasir,gudang']);
 
-        // 💰 Sales Management
-        $routes->get('sales', 'SaleController::index', ['filter' => 'role:admin']);
-        $routes->post('sales', 'SaleController::create'); 
+        // FIX 404 & DATABASE ERROR: Pastikan rute sales didefinisikan dengan benar
+        // Rute GET untuk Laporan dan POST untuk Transaksi Kasir
+        $routes->get('sales', 'SaleController::index'); 
+        $routes->post('sales', 'SaleController::create');
 
-        // 👥 User/Employee Management (CRUD Karyawan)
-        $routes->resource('users', ['controller' => 'UserController', 'filter' => 'role:admin']);
+        $routes->get('stock-logs', 'StockLogController::index');
+
+        $routes->group('', ['filter' => ['role:admin']], function($routes) {
+            $routes->get('dashboard', 'DashboardController::index');
+            $routes->resource('users', ['controller' => 'UserController']);
+            // Gunakan resource untuk mempermudah CRUD produk
+            $routes->resource('products', ['controller' => 'ProductController']);
+        });
     });
 });

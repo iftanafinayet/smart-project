@@ -8,29 +8,31 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
-        // Matikan foreign key check sementara
-        $this->db->query('SET FOREIGN_KEY_CHECKS=0;');
-        
-        // Bersihkan tabel users agar tidak duplicate username
-        $this->db->table('users')->truncate();
-        
-        $this->db->query('SET FOREIGN_KEY_CHECKS=1;');
-
         $data = [
             [
-                'role_id'   => 1, // Admin (Pastikan di RoleSeeder ID 1 adalah admin)
+                'id'        => 1, // Memastikan ID 1 ada untuk relasi SaleSeeder
+                'role_id'   => 1, // Admin
                 'username'  => 'admin',
                 'password'  => password_hash('admin123', PASSWORD_BCRYPT),
                 'full_name' => 'Administrator Utama',
             ],
             [
+                'id'        => 2,
                 'role_id'   => 2, // Kasir
                 'username'  => 'kasir1',
                 'password'  => password_hash('kasir123', PASSWORD_BCRYPT),
                 'full_name' => 'Staff Kasir 01',
             ],
+            [
+                'id'        => 3,
+                'role_id'   => 3, // Kasir
+                'username'  => 'gudang',
+                'password'  => password_hash('gudang123', PASSWORD_BCRYPT),
+                'full_name' => 'Warehouse',
+            ]
         ];
 
+        $this->db->table('users')->emptyTable(); 
         $this->db->table('users')->insertBatch($data);
     }
 }

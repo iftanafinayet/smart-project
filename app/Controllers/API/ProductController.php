@@ -10,10 +10,24 @@ class ProductController extends BaseController
 {
     use ResponseTrait;
 
+    /**
+     * Menampilkan daftar produk dengan fitur filter stok
+     */
     public function index()
     {
         $model = new ProductModel();
-        return $this->respond(['data' => $model->findAll()]);
+        
+        // Mengambil parameter filter dari request (misal: ?filter=low_stock)
+        $filter = $this->request->getVar('filter');
+
+        // Jika filter low_stock aktif, tampilkan produk dengan stok < 10
+        if ($filter === 'low_stock') {
+            $data = $model->where('stock <', 10)->findAll();
+        } else {
+            $data = $model->findAll();
+        }
+
+        return $this->respond(['data' => $data]);
     }
 
     public function create()
@@ -21,8 +35,7 @@ class ProductController extends BaseController
         $model = new ProductModel();
         $data = $this->request->getJSON(true);
 
-        // Validasi bisa ditambahkan di sini
-
+        // Disarankan menambahkan validasi sesuai kebutuhan MERN/PHP Stack Anda
         if ($model->insert($data)) {
             return $this->respondCreated(['message' => 'Produk berhasil ditambahkan']);
         }

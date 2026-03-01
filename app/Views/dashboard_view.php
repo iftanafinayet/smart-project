@@ -84,8 +84,7 @@
 
             if (response.status === 403) {
                 alert('Akses Ditolak: Anda tidak memiliki izin Admin.');
-                window.location.href = '/dashboard'; // Atau redirect ke halaman lain
-                return;
+                window.location.href = '/dashboard';
             }
 
             const result = await response.json();

@@ -17,20 +17,32 @@ class JwtFilter implements FilterInterface
      */
     public function before(RequestInterface $request, $arguments = null)
     {
-        // Mengambil header Authorization. 
-        // Catatan: Jika menggunakan Apache, pastikan .htaccess mengizinkan HTTP_AUTHORIZATION
+        // 1. Ambil header Authorization dari server
+        // Menggunakan getServer untuk kompatibilitas konfigurasi Apache/Nginx yang ketat
         $authHeader = $request->getServer('HTTP_AUTHORIZATION');
 
-        // 1. Cek apakah header Authorization ada
+        // Jika getServer kosong, coba ambil melalui getHeaderLine sebagai cadangan
+        if (!$authHeader) {
+            $authHeader = $request->getHeaderLine('Authorization');
+        }
+
         if (!$authHeader) {
             return Services::response()
                 ->setStatusCode(401)
-                ->setJSON(['status' => 401, 'message' => 'Token not found']);
+                ->setJSON([
+                    'status' => 401, 
+                    'message' => 'Token tidak ditemukan. Silakan login terlebih dahulu.'
+                ]);
         }
 
         try {
-            // 2. Ambil token dari format "Bearer {token}"
-            $token = str_replace('Bearer ', '', $authHeader);
+            // 2. Ekstrak token dari format "Bearer {token}"
+            // Menggunakan regex agar lebih aman terhadap spasi ganda
+            if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                $token = $matches[1];
+            } else {
+                $token = str_replace('Bearer ', '', $authHeader);
+            }
             
             // Ambil secret key dari file .env
             $key = getenv('JWT_SECRET');
@@ -39,8 +51,7 @@ class JwtFilter implements FilterInterface
             $decoded = JWT::decode($token, new Key($key, 'HS256'));
 
             // 4. Tempelkan data user hasil decode ke object request.
-            // Di CI4, kita bisa menambah properti dinamis ke objek $request
-            // agar bisa diakses di Controller atau filter berikutnya.
+            // Data ini (seperti role_id) akan digunakan oleh RoleFilter selanjutnya.
             $request->user = $decoded;
 
         } catch (Exception $e) {
@@ -49,8 +60,8 @@ class JwtFilter implements FilterInterface
                 ->setStatusCode(401)
                 ->setJSON([
                     'status' => 401, 
-                    'message' => 'Invalid or Expired Token',
-                    'error' => $e->getMessage() // Opsional: tampilkan error detail untuk debugging
+                    'message' => 'Sesi tidak valid atau telah berakhir.',
+                    'debug' => $e->getMessage() 
                 ]);
         }
     }
