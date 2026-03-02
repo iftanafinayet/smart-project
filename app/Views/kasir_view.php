@@ -234,7 +234,6 @@
     };
 
     try {
-        // Baris 244 yang sebelumnya menyebabkan Error 500
         const res = await fetch(`${API_BASE}/sales`, {
             method: 'POST',
             headers: { 
@@ -253,7 +252,6 @@
             renderCart();
             loadProducts(); // Refresh tampilan stok
         } else {
-            // Menangkap pesan error dari blok try-catch backend
             alert('Gagal: ' + (result.messages?.error || 'Terjadi kesalahan pada server.'));
         }
     } catch (err) { 

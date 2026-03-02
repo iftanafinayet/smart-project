@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
     <div class="mb-10">
         <h2 class="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Penerimaan <span class="text-blue-600 font-black">Barang (PO)</span></h2>
-        <p class="text-gray-500 font-medium mt-1 italic">Kelola stok masuk dari supplier dan audit fisik barang organisasi.</p>
+        <p class="text-gray-500 font-medium mt-1 italic">Kelola stok masuk dari supplier dan audit fisik barang.</p>
     </div>
 
     <div class="bg-white rounded-[3rem] shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">

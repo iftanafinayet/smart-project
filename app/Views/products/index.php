@@ -1,12 +1,12 @@
-<?= $this->extend('layouts/admin') ?>
+<?= $this->extend('layouts/main') ?>
 
 <?= $this->section('content') ?>
     <div class="flex justify-between items-end mb-10">
         <div>
-            <h2 class="text-4xl font-black text-gray-900 tracking-tighter uppercase">Katalog <span class="text-blue-600">Produk</span></h2>
+            <h2 class="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Katalog <span class="text-blue-600">Produk</span></h2>
             <p class="text-gray-500 font-medium mt-1 italic">Kelola stok merchandise dan produk organisasi.</p>
         </div>
-        <button onclick="openModal()" class="group bg-blue-600 text-white px-8 py-4 rounded-2xl flex items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95">
+        <button onclick="openModal('add')" class="group bg-blue-600 text-white px-8 py-4 rounded-2xl flex items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95">
             <i data-lucide="plus-circle" class="w-5 h-5 group-hover:rotate-90 transition-transform"></i> 
             <span class="text-xs font-black uppercase tracking-widest">Tambah Produk</span>
         </button>
@@ -31,13 +31,14 @@
         </div>
     </div>
 
-    <?= view('components/sidebar') ?>
+    <?= view('components/product_modal') ?>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
 <script>
     /**
-     * Mengambil data produk dari API organisasi
+     * Memuat data produk
      */
     async function loadProducts() {
         try {
@@ -79,70 +80,77 @@
             lucide.createIcons();
         } catch (err) { 
             console.error(err); 
-            document.getElementById('product-table-body').innerHTML = '<tr><td colspan="5" class="text-center py-20 text-red-500 font-black italic uppercase tracking-widest text-xs text-center">Gagal memuat data dari server.</td></tr>';
         }
     }
 
-    // Eksekusi pemuatan data awal
     loadProducts();
 
-    // Fungsi Modal
+    /**
+     * Manajemen Modal
+     */
     function openModal(mode = 'add') {
-        document.getElementById('productModal').classList.remove('hidden');
-        if(mode === 'add') {
-            document.getElementById('modalTitle').innerText = 'Tambah Produk';
-            document.getElementById('productForm').reset();
-            document.getElementById('productId').value = '';
+        const modal = document.getElementById('productModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (mode === 'add') {
+                document.getElementById('modalTitle').innerText = 'Tambah Produk';
+                document.getElementById('productForm').reset();
+                document.getElementById('productId').value = '';
+            }
         }
     }
 
-    function closeModal() { document.getElementById('productModal').classList.add('hidden'); }
+    function closeModal() { 
+        const modal = document.getElementById('productModal');
+        if (modal) modal.classList.add('hidden'); 
+    }
 
-    /**
-     * Mengisi form modal dengan data produk untuk pengeditan
-     */
     function editProduct(id, sku, name, price, stock) {
+        openModal('edit');
         document.getElementById('modalTitle').innerText = 'Edit Produk';
         document.getElementById('productId').value = id;
         document.getElementById('sku').value = sku;
         document.getElementById('productName').value = name;
         document.getElementById('sellingPrice').value = price;
         document.getElementById('currentStock').value = stock;
-        openModal('edit');
     }
 
     /**
-     * Menangani pengiriman form (Tambah/Edit)
+     * Submit Form (Tambah/Edit)
      */
-    document.getElementById('productForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const id = document.getElementById('productId').value;
-        const data = {
-            sku: document.getElementById('sku').value,
-            product_name: document.getElementById('productName').value,
-            selling_price: document.getElementById('sellingPrice').value,
-            current_stock: document.getElementById('currentStock').value
-        };
+    const pForm = document.getElementById('productForm');
+    if (pForm) {
+        pForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('productId').value;
+            const data = {
+                sku: document.getElementById('sku').value,
+                product_name: document.getElementById('productName').value,
+                selling_price: document.getElementById('sellingPrice').value,
+                current_stock: document.getElementById('currentStock').value
+            };
 
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `${API_URL}products/${id}` : `${API_URL}products`;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}products/${id}` : `${API_URL}products`;
 
-        await fetch(url, {
-            method: method,
-            headers: { 
-                'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify(data)
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Authorization': `Bearer ${token}`, 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    loadProducts();
+                }
+            } catch (err) { alert("Gagal menyimpan data."); }
         });
+    }
 
-        closeModal();
-        loadProducts();
-    });
-
-    /**
-     * Menghapus produk dari sistem
-     */
     async function deleteProduct(id) {
         if (confirm('Yakin ingin menghapus produk organisasi ini?')) {
             await fetch(`${API_URL}products/${id}`, {
