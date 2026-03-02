@@ -63,7 +63,7 @@
         tbody.innerHTML = '<tr><td colspan="4" class="px-8 py-32 text-center text-gray-300 font-bold italic animate-pulse uppercase tracking-widest text-xs">Sinkronisasi data server...</td></tr>';
 
         try {
-            const response = await fetch(`${API_BASE}/sales?start=${start}&end=${end}`, {
+            const response = await fetch(`${API_URL}/sales?start=${start}&end=${end}`, {
                 headers: { 
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
